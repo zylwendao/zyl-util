@@ -1,0 +1,76 @@
+debug: false
+server:
+  port: 80
+#  servlet:
+#    context-path: /dnc
+  maxPostSize: -1
+  maxHttpHeaderSize: 10240000
+  tomcat:
+    uri-encoding: UTF-8
+spring:
+  # 应用程序名称
+  application:
+    name: dnc-mini-api
+  # 当前环境名称（注意：不可设置为 test 它是单元测试专用的名称）
+  profiles:
+    active: default
+  redis:
+    host: 127.0.0.1
+    port: 6379
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/zyl_local
+    username: root
+    password: root
+#  datasource2:
+#    driver-class-name: com.mysql.jdbc.Driver
+#    url: jdbc:mysql://127.0.0.1:3306/dnc
+#    username: root
+#    password: root
+#  datasource:
+#    driver-class-name: com.mysql.jdbc.Driver
+##    测试
+##    url: jdbc:mysql://223.71.97.98:20206/dnc_20210317?useSSL=false&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true
+#    url: jdbc:mysql://10.10.0.101:3306/dnc?useSSL=false&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true
+#    username: dnc
+#    password: dnc@123!
+##    正式
+##    url: jdbc:mysql://10.8.32.128:3306/dnc?useSSL=false&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&autoReconnect=true&failOverReadOnly=false
+##    username: dnc
+##    password: mvtech@dnc@123!@#
+##    testSql: SELECT 1
+##本地ES环境
+##  data:
+##    elasticsearch:
+##      cluster-name:  cluster-t1
+##      cluster-nodes: 172.16.100.28:9300,172.16.100.29:9300
+##      repositories:
+##        enable: true
+##测试ES环境
+#  data:
+#    elasticsearch:
+#      cluster-name:  elasticsearch-mvtech-test
+#      cluster-nodes: 10.10.0.106:9300
+#      repositories:
+#        enable: true
+##正式ES环境
+##  data:
+##    elasticsearch:
+##      cluster-name: elasticsearch-mvtech-test
+##      cluster-nodes: 10.8.32.160:9300,10.8.32.161:9300,10.8.32.162:9300
+##      repositories:
+##        enable: true
+#
+#
+#mybatis:
+#  typeAliasesPackage: com.mvTech.entity
+#  mapperLocations:  classpath:mapper/**.xml
+#
+## 日志配置
+##logging:
+##  config: classpath:config/logback-spring.xml
+## 运营商意愿分类-对应运营商意愿分类枚举类
+#isp-InclinationIndexes:
+#  ctcc: 1,2,3,4,5,6,7,8,9,10
+#  cmcc: 1,11,12
+#  cucc: 1,2,3,13,14,15,16,17,18

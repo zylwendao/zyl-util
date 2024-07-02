@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>CountNum 计算</title>
+    <style>
+        body {
+            background-color: #545657;
+            color: #82FFE0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            margin: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: row; /* 使用行方向水平对齐 */
+            align-items: center;
+            flex-wrap: wrap; /* 允许换行 */
+            margin-bottom: 10px;
+        }
+
+
+        .input-group label {
+            margin-bottom: 5px; /* 标签和输入框之间的间距 */
+            margin-left: 35px; /* 标签和输入框之间的间距 */
+        }
+
+        .input-group input {
+            margin: 1px 0; /* 输入框上下间距 */
+            padding: 3px;
+            width: 42px;
+            margin-left: 15px; /* 标签和输入框之间的间距 */
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap; /* 换行显示按钮 */
+            gap: 10px; /* 按钮之间的间距 */
+            margin-top: 10px; /* 输入框和按钮组之间的间距 */
+        }
+
+        button {
+            padding: 3px 4px;
+            background-color: #82FFE0;
+            border: none;
+            color: #545657;
+            cursor: pointer;
+            transition: background-color 0.3s; /* 添加过渡效果 */
+        }
+
+        button:hover {
+            background-color: #66CCB8;
+        }
+
+        textarea {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #545657;
+            color: #82FFE0;
+            border: 1px solid #82FFE0;
+            resize: none; /* 禁止调整大小 */
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/decimal.js@10.3.1/decimal.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <h1>CountNum 计算</h1>
+    <div class="input-group">
+        <label for="A">金额</label>&nbsp;&nbsp;&nbsp;&nbsp;
+        <label for="A">盘口</label>
+    </div>
+    <div class="input-group">
+        <space for="A">A</space>
+        <input type="text" id="A" step="0.001" value="10.000">&nbsp;&nbsp;--
+        <input type="text" id="k1" step="0.001" value="1.500">
+    </div>
+    <div class="input-group">
+        <space for="A">B</space>
+        <input type="text" id="B" step="0.001" value="10.000">&nbsp;&nbsp;--
+        <input type="text" id="Bk1" step="0.001" value="1.700">
+        <input type="text" id="Bk2" step="0.001" value="0.000">
+        <input type="text" id="Bk3" step="0.001" value="0.000">
+    </div>
+
+    <div class="input-group">
+        <label for="k2">二次投入盘口 (k2):</label>
+        <input type="text" id="k2" step="0.001" value="1.500">
+    </div>
+
+    <div class="input-group">
+        <label for="myK3_keep">保留首次利润-k3:</label>
+        <input type="text" id="myK3_keep" step="0.001" value="7.000">
+    </div>
+
+    <div class="input-group">
+        <label for="myK3_dis">放弃首次利润-k3:</label>
+        <input type="text" id="myK3_dis" step="0.001" value="4.000">
+    </div>
+    <div class="button-group">
+        <button onclick="adjustValue('myK3_dis', -0.1)">-0.1</button>
+        <button onclick="adjustValue('myK3_dis', 0.1)">+0.1</button>
+        <button onclick="adjustValue('myK3_dis', -0.5)">-0.5</button>
+        <button onclick="adjustValue('myK3_dis', 0.5)">+0.5</button>
+    </div>
+
+    <textarea id="log" readonly></textarea>
+</div>
+
+<script>
+    // 页面加载完成时执行一次计算
+    document.addEventListener("DOMContentLoaded", function (event) {
+        calculate();
+    });
+
+    // 添加事件监听，但不立即执行计算
+    document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', formatAndCalculateOnBlur);
+    });
+
+    function formatAndCalculateOnBlur(event) {
+        let input = event.target;
+        if (input.value) {
+            let formattedValue = new Decimal(parseFloat(input.value)).toFixed(3);
+            input.value = formattedValue;
+        }
+        calculate(); // Execute calculation on blur
+    }
+
+    function adjustValue(id, adjustment) {
+        let input = document.getElementById(id);
+        let currentValue = new Decimal(parseFloat(input.value));
+        let newValue = currentValue.plus(adjustment).toFixed(3);
+        input.value = newValue;
+        calculate(); // Execute calculation after adjusting value
+    }
+
+    // 修改后的 calculate 函数
+    function calculate() {
+        // 获取所有输入值作为 BigDecimal 对象
+        let A = new Decimal(document.getElementById('A').value);
+        let k1 = new Decimal(document.getElementById('k1').value);
+        let Bk1 = new Decimal(document.getElementById('Bk1').value);
+        let Bk2 = new Decimal(document.getElementById('Bk2').value);
+        let Bk3 = new Decimal(document.getElementById('Bk3').value);
+        let k2 = new Decimal(document.getElementById('k2').value);
+        let myK3_keep = new Decimal(document.getElementById('myK3_keep').value);
+        let myK3_dis_input = document.getElementById('myK3_dis').value;
+        let myK3_dis = myK3_dis_input ? new Decimal(myK3_dis_input) : null;
+
+        let log = document.getElementById('log');
+        log.value = ""; // 清空日志
+
+        function println(message) {
+            log.value += message + "\n";
+        }
+
+        // 计算第一轮投资和纯利润
+        let ADecimal = A;
+        println("第一轮 : ");
+        println("投入 = " + ADecimal.toString());
+        let value_step1 = k1.times(ADecimal).minus(ADecimal).toDecimalPlaces(3); // 保留三位小数
+        println("纯利 = " + value_step1.toString());
+        let A_k_need = divideTwoByFractionalPart(k1, new Decimal("2.000"));
+        println("对向冲平_保利: " + A_k_need + " 盈利: " + value_step1.times(A_k_need).minus(ADecimal).minus(value_step1));
+        let A_k_dis = divideTwoByFractionalPart(k1, k1);
+        println("对向冲平_毁利: " + A_k_dis + " 盈利: " + value_step1.times(A_k_dis).minus(ADecimal).minus(value_step1));
+        println("k1 = " + k1.toString());
+        println("------------------------");
+
+        let Bk;
+        // 计算第二轮投资和纯利润
+        let BDecimal; // 保留三位小数
+        let BDecimal_process; // 投入过程
+        if (Bk2.cmp(new Decimal("0.000")) !== 0 && Bk3.cmp(new Decimal("0.000")) !== 0) {
+            Bk = (Bk1.plus(Bk2).plus(Bk3)).dividedBy(3).toDecimalPlaces(3);
+            BDecimal = (A.plus(A).plus(A)).toDecimalPlaces(3); // 保留三位小数
+            BDecimal_process = A + "(" + Bk1 + ")" + "(" + Bk2 + ")" + "(" + Bk3 + ") ---> " + A.plus(A).plus(A) + "(" + Bk + ")"
+            console.log("1有 2有 3有---" + Bk);
+        } else if (Bk2.cmp(new Decimal("0.000")) !== 0 && Bk3.eq(new Decimal("0.000"))) {
+            Bk = (Bk1.plus(Bk2)).dividedBy(2).toDecimalPlaces(3); // 保留三位小数
+            BDecimal = (A.plus(A)).toDecimalPlaces(3); // 保留三位小数
+            BDecimal_process = A + "(" + Bk1 + ")" + "(" + Bk2 + ") ---> " + A + "(" + Bk + ") = " + BDecimal;
+            console.log("1有 2有 3无---" + Bk);
+        } else {
+            Bk = Bk1;
+            BDecimal = A.toDecimalPlaces(3); // 保留三位小数
+            BDecimal_process = A + "(" + Bk1 + ") ---> " + A + "(" + Bk + ") = " + BDecimal;
+            console.log("1有 2无 3无---" + Bk);
+            console.log("Bk1---" + Bk1);
+        }
+
+        println("第二轮 : ");
+        println("第二轮 投入过程 = " + BDecimal_process);
+        println("第二轮 投入 = " + BDecimal.toString());
+        let value_step2 = BDecimal.times(Bk).toDecimalPlaces(3); // 保留三位小数
+        let value_step2_real = value_step2.minus(BDecimal).toDecimalPlaces(3); // 保留三位小数
+        println("第二轮 纯利 = " + value_step2_real.toString());
+        println("k2 = " + Bk.toString());
+        println("------------------------");
+
+        // 计算第三轮保留初始利润情况
+        println("第三轮 : ");
+        println("第三轮 投入(二轮纯利) : " + value_step2_real.toString());
+
+        let B_k_need = (BDecimal.plus(ADecimal.plus(value_step1))).dividedBy(value_step2_real).toDecimalPlaces(3);
+        println("对向冲平_保利: " + B_k_need + " x " + value_step2_real + " = " + (value_step2_real.plus(value_step1)).times(B_k_need) +
+            " 盈利: " + (value_step2_real.plus(value_step1)).times(B_k_need) + " - " + BDecimal + " - " + ADecimal + " = "
+            + value_step2_real.times(B_k_need).minus(BDecimal).minus(ADecimal));
+
+        let B_k_dis = (BDecimal.plus(ADecimal)).dividedBy(value_step2_real).toDecimalPlaces(3);
+        println("对向冲平_毁利: " + B_k_dis + " x " + value_step2_real + " = " + value_step2_real.times(B_k_dis) +
+            " 盈利: " + value_step2_real.times(B_k_dis) + " - " + BDecimal + " - " + ADecimal + " = "
+            + value_step2_real.times(B_k_dis).minus(BDecimal).minus(ADecimal));
+
+
+        println("------------------------");
+        println("第三轮实际 : ");
+        println("对向冲平_保利: " + myK3_keep + " x " + value_step2_real + " = " + value_step2_real.times(myK3_keep) +
+            " 盈利: " + value_step2_real.times(myK3_keep) + " - " + BDecimal + " = "
+            + value_step2_real.times(myK3_keep).minus(BDecimal));
+
+        println("对向冲平_毁利: " + myK3_dis + " x " + value_step2_real + " = " + value_step2_real.times(myK3_dis) +
+            " 盈利: " + value_step2_real.times(myK3_dis) + " - " + BDecimal + " = "
+            + value_step2_real.times(myK3_dis).minus(BDecimal));
+
+        println("------------------------");
+    }
+
+    // 新增方法：对参数取模1运算，并返回用2除以小数部分的结果保留三位小数
+    function divideTwoByFractionalPart(decimalParam, num) {
+        let decimalValue = new Decimal(decimalParam);
+        let modResult = decimalValue.mod(1);
+        let result = num.dividedBy(modResult).toDecimalPlaces(3);
+        return result.toString();
+    }
+
+
+</script>
+</body>
+</html>
